@@ -1,0 +1,12 @@
+hsm:
+  host: "hsm_host"
+  port: "hsm_port"
+  user: "hsm_user"
+  setupPassword: "hsm_setup_password"
+  proxyUser: ""
+  proxyPassword: ""
+  attestationKeyName: "attestation-key"
+  secretPath: "/opt/keycloak/providers/.secret"
+  keyLabel: "key_label"
+  keyPassword: ""
+  algorithm: "RS256"
