@@ -1,6 +1,0 @@
-tsb:
-  tsbUrl: "tsb_url"
-  auth: "NONE"
-  keyLabel: "TEST_EC"
-  keyPassword: ""
-  algorithm: "ES256"

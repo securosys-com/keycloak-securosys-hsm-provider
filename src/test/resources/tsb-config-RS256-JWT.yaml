@@ -1,7 +1,0 @@
-tsb:
-  tsbUrl: "tsb_url"
-  auth: "TOKEN"
-  bearerToken: "bearer_token"
-  keyLabel: "RSA_TEST_1"
-  keyPassword: ""
-  algorithm: "RS256"

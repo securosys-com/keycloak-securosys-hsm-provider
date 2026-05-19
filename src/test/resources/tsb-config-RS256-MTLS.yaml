@@ -1,8 +1,0 @@
-tsb:
-  tsbUrl: "tsb_url"
-  auth: "CERT"
-  mtlsP12Path: "/opt/keycloak/providers/client.p12"
-  mtlsP12Password: "p12_pass"
-  keyLabel: "TEST_RSA"
-  keyPassword: ""
-  algorithm: "RS256"
