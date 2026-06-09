@@ -1,0 +1,108 @@
+plugins {
+    id 'java'
+    id 'com.adarshr.test-logger' version '4.0.0'   // grouped, coloured per-class test output
+}
+
+group = 'com.securosys'
+version = '1.0.0'
+
+def keycloakVersion = "26.0.8"
+def lombokVersion = "1.18.30"
+
+// No repositories here — everything (incl. com.securosys:primus-jce) resolves through the single
+// `maven-dev` virtual declared in settings.gradle (FAIL_ON_PROJECT_REPOS). BOM-governed deps take
+// versions from the shared Securosys platform; the rest stay explicitly pinned.
+
+// The JVM that runs Keycloak must be able to load the provider JAR.
+// Even though Keycloak 26 supports Java 25, the Keycloak Docker containers still use Java 21:
+// https://www.keycloak.org/docs/latest/release_notes/index.html#java-25-support
+// Therefore, we need to tell our Java compiler to target bytecode for a certain Java version.
+// For maximum compatibility, compile with an older Java version.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    implementation platform("com.securosys:securosys-bom:${securosysBomVersion}")
+
+    // Your runtime dependencies - copied to provider-dist/lib
+    implementation libs.bouncycastle.bcpkix       // BOM 1.84 (was 1.80)
+    implementation libs.bouncycastle.bcprov       // BOM 1.84 (was 1.83)
+    implementation libs.commons.lang3
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.20.1'   // explicit (kept ahead of Spring)
+    implementation('com.securosys:primus-jce') { version { strictly '2.5.4' } }   // public-release pin; strictly, so the BOM's 2.6.3 doesn't bump it
+    implementation libs.jakarta.validation.api   // BOM 3.1.1
+
+    // Keycloak APIs - compile only, do not ship
+    compileOnly "org.keycloak:keycloak-server-spi:${keycloakVersion}"
+    compileOnly "org.keycloak:keycloak-server-spi-private:${keycloakVersion}"
+    compileOnly "org.keycloak:keycloak-services:${keycloakVersion}"
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // Tests
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    testImplementation 'org.testcontainers:testcontainers:2.0.3'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+    testImplementation 'io.rest-assured:rest-assured:5.3.2'
+
+    testImplementation "org.keycloak:keycloak-admin-client:${keycloakVersion}"
+    testImplementation "org.keycloak:keycloak-core:${keycloakVersion}"
+    testImplementation "org.keycloak:keycloak-server-spi:${keycloakVersion}"
+    testImplementation "org.keycloak:keycloak-server-spi-private:${keycloakVersion}"
+    testImplementation "org.keycloak:keycloak-services:${keycloakVersion}"
+
+    testImplementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.2'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+}
+
+tasks.register('providerDist', Copy) {
+    dependsOn jar
+
+    into layout.buildDirectory.dir("provider-dist")
+
+    from(tasks.jar) {
+        into "provider"
+    }
+
+    from(configurations.runtimeClasspath) {
+        into "lib"
+
+        // Safety: do not copy Keycloak/Quarkus/JBoss APIs
+        exclude { details ->
+            def name = details.file.name
+            name.startsWith("keycloak-") ||
+                    name.startsWith("quarkus-") ||
+                    name.startsWith("jboss-") ||
+                    name.startsWith("jakarta.annotation-") ||
+                    name.startsWith("jakarta.ws.rs-") ||
+                    name.startsWith("jakarta.transaction-")
+        }
+    }
+}
+
+tasks.named('build') {
+    dependsOn providerDist
+}
+
+test {
+    dependsOn providerDist
+
+    useJUnitPlatform()
+}
+
+// Grouped-by-class, Maven/Surefire-style coloured test console output (like azure-ekm-proxy-api).
+testlogger {
+    theme = 'standard'              // explicit PASSED/FAILED/SKIPPED words, grouped per class
+    showStandardStreams = false     // keep app stdout/logback out of the test roster
+}
