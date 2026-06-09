@@ -1,0 +1,2 @@
+com.securosys.hsm.provider.signature.algorithm.RS256
+com.securosys.hsm.provider.signature.algorithm.ES256
