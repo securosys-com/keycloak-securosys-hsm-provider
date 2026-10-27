@@ -1,0 +1,6 @@
+tsb:
+  tsbUrl: "tsb_url"
+  auth: "NONE"
+  keyLabel: "TEST_RSA"
+  keyPassword: ""
+  algorithm: "RS256"
