@@ -1,0 +1,3 @@
+// Without a name, Gradle takes the directory's, and the jar is called after
+// wherever the repository was checked out (e.g. src-1.0.0.jar in a container).
+rootProject.name = 'keycloak-securosys-hsm-provider'
